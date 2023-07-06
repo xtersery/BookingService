@@ -3,9 +3,9 @@ import java.time.LocalDate;
 
 public class DB {
     private static int id = 0;
-    static final String DB_URL = "jdbc:postgresql://localhost:5432/";
-    static final String USER = "postgres";
-    static final String PASS = "xtersery";
+    static final String DB_URL = System.getenv("DATABASE_URL");
+    static final String USER = System.getenv("DATABASE_USER");
+    static final String PASS = System.getenv("DATABASE_PASSWORD");
 
     public static Connection connection() {
         Connection connection = null;
