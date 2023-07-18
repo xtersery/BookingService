@@ -1,57 +1,68 @@
 import java.sql.*;
-import java.time.LocalDate;
 
 public class User {
+    private static String query;
     private String email;
     private String username;
-    private String departure;
-    private String destination;
+    private String password;
 
-    User(){}
-    User(String email, String username) {
+    User(String email, String password, String username) {
         this.email = email;
+        this.password = password;
         this.username = username;
     }
 
-    public void addRequisites(String departure, String destination) {
-        this.departure = departure;
-        this.destination = destination;
+    public void create() throws SQLException {
+
+        query = "CREATE TABLE USER_ACCOUNT ("
+                + "ID SERIAL PRIMARY KEY, "
+                + "USER_EMAIL VARCHAR(40) NOT NULL, "
+                + "USERNAME VARCHAR(40) NOT NULL, "
+                + "PASSWORD VARCHAR(40) NOT NULL"
+                + ");";
+
+        DB.send(query);
     }
 
     public void sendToDB() throws SQLException {
-        Connection dbCon = null;
-        Statement smt = null;
+        query = "INSERT INTO USER_ACCOUNT (USER_EMAIL, USERNAME, PASSWORD) " +
+                String.format("VALUES ('%s', '%s', '%s');",
+                        email, username, password);
 
-        String updateTableSQL = "INSERT INTO FLIGHTS (USER_EMAIL, USERNAME, DEPARTURE, DESTINATION, CREATED_DATE) " +
-                String.format("VALUES ('%s', '%s', '%s', '%s', '%s');",
-                        email, username, departure, destination, getCurrentDate());
-
-        try {
-            dbCon = DB.connection();
-            smt = dbCon.createStatement();
-
-//            if (!DB.checkExistance(dbCon, "FLIGHTS"))  {
-//                DB.createDBTable();
-//            }
-
-            System.out.println(getCurrentDate());
-            smt.execute(updateTableSQL);
-            System.out.println("Table \"FLIGHTS\" is updated!");
-        } catch (SQLException e) {
-            System.out.println(e.getMessage());
-        } finally {
-            if (smt != null) {
-                smt.close();
-            }
-            if (dbCon != null) {
-                dbCon.close();
-            }
-        }
+        DB.send(query);
     }
 
+    public static Integer search(String email, String password) {
+        Connection con = null;
 
+        query = "SELECT * FROM USER_ACCOUNT WHERE user_email=? and password=?";
 
-    private static Date getCurrentDate() {
-        return Date.valueOf(LocalDate.now());
+        try {
+            con = DB.connection();
+            PreparedStatement smt = con.prepareStatement(query);
+
+            smt.setString(1, email);
+            smt.setString(2, password);
+            ResultSet rs = smt.executeQuery();
+            if (rs.next()) {
+                int user_id = rs.getInt("id");
+                return user_id;
+            }
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+
+        return -1;
+
+    }
+
+    //TODO: create a verifying algorithm for user login
+    public boolean checkUser(String email, String password) {
+        query = "SELECT * FROM USER_ACCOUNT WHERE user_email=? and password=? " +
+                "EXCEPTION " +
+                "WHEN NO_DATA_FOUND THEN " +
+                "" +
+                "END;";
+        return true;
     }
 }

@@ -2,10 +2,9 @@ import java.sql.*;
 import java.time.LocalDate;
 
 public class DB {
-    private static int id = 0;
-    static final String DB_URL = System.getenv("DATABASE_URL");
-    static final String USER = System.getenv("DATABASE_USER");
-    static final String PASS = System.getenv("DATABASE_PASSWORD");
+    static final String DB_URL = "jdbc:postgresql://localhost:5432/";
+    static final String USER = "postgres";
+    static final String PASS = "xtersery";
 
     public static Connection connection() {
         Connection connection = null;
@@ -24,72 +23,33 @@ public class DB {
         return connection;
     }
 
-    public static boolean checkExistance(Connection con, String name) throws SQLException {
-        PreparedStatement preparedStatement = con.prepareStatement("SELECT count(*) " +
-                "FROM information_schema.tables " +
-                "WHERE table_name = ?" +
-                "LIMIT 1;");
-        preparedStatement.setString(1, name);
+    public static boolean checkExistance(String name) throws SQLException {
+        ResultSet set = connection().getMetaData().getCatalogs();
 
-        ResultSet resultSet = preparedStatement.executeQuery();
-        resultSet.next();
-        return resultSet.getInt(1) != 0;
-    }
-
-    public static void createDBTable() throws SQLException {
-        Connection dbConn = null;
-        Statement smt = null;
-
-        String createTableSQL = "CREATE TABLE FLIGHTS("
-                + "USER_EMAIL VARCHAR(40) NOT NULL, "
-                + "USERNAME VARCHAR(40) NOT NULL, "
-                + "DEPARTURE VARCHAR(40) NOT NULL, "
-                + "DESTINATION VARCHAR(40) NOT NULL, "
-                + "CREATED_DATE DATE NOT NULL, "
-                + "PRIMARY KEY (USER_EMAIL) " + ");";
-
-        String deleteTableSQL = "DROP TABLE FLIGHTS ";
-
-        try {
-            dbConn = connection();
-            smt = dbConn.createStatement();
-            //smt.execute(deleteTableSQL);
-            smt.execute(createTableSQL);
-            System.out.println("Table \"FLIGHTS\" is created!");
-        } catch (SQLException e) {
-            System.out.println(e.getMessage());
-        } finally {
-            if (smt != null) {
-                smt.close();
-            }
-            if (dbConn != null) {
-                dbConn.close();
+        while (set.next()) {
+            String databaseName = set.getString(1);
+            if (name.equals(databaseName)) {
+                return true;
             }
         }
+        return false;
     }
 
-    public static void insert(String departure, String destination) throws SQLException {
-        Connection dbConn = null;
-        Statement smt = null;
 
-        id++;
-        String updateTableSQL = "INSERT INTO FLIGHTS (USER_ID, USERNAME, DEPARTURE, DESTINATION, CREATED_DATE) "
-                + String.format("VALUES (%d, 'firstUser', '%s', '%s', '%s');",
-                  id,departure,destination, getCurrentDate());
+    public static void send(String query) throws SQLException {
+        Statement smt = null;
+        Connection con = connection();
         try {
-            dbConn = connection();
-            smt = dbConn.createStatement();
-            System.out.println(getCurrentDate());
-            smt.execute(updateTableSQL);
-            System.out.println("Table \"FLIGHTS\" is updated!");
+            smt = con.createStatement();
+            smt.execute(query);
         } catch (SQLException e) {
             System.out.println(e.getMessage());
         } finally {
             if (smt != null) {
                 smt.close();
             }
-            if (dbConn != null) {
-                dbConn.close();
+            if (con != null) {
+                con.close();
             }
         }
     }
